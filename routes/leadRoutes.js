@@ -3,45 +3,65 @@ import Lead from "../models/Lead.js";
 
 const router = express.Router();
 
-// ✅ GET all leads
-router.get("/", async (req, res) => {
-  try {
-    const leads = await Lead.find();
-    res.json(leads);
-  } catch (err) {
-    console.error("❌ Error fetching leads:", err);
-    res.status(500).json({ message: "Server Error", error: err.message });
-  }
-});
-
-// ✅ POST create a new lead
+/**
+ * CREATE new lead
+ * POST /leads
+ */
 router.post("/", async (req, res) => {
   try {
-    console.log("📥 Incoming Lead Data:", req.body); // 👈 check what frontend sends
-
-    const newLead = new Lead(req.body);
-    await newLead.save();
-
-    console.log("✅ Lead Saved:", newLead);
-    res.status(201).json(newLead);
+    const lead = new Lead(req.body);
+    await lead.save();
+    res.status(201).json(lead);
   } catch (err) {
-    console.error("❌ Error saving lead:", err);
-    res.status(500).json({
-      message: "Server Error",
-      error: err.message,
-      stack: err.stack,
-    });
+    res.status(500).json({ message: "Error adding lead", error: err.message });
   }
 });
 
-// ✅ DELETE a lead
+/**
+ * GET leads belonging to a user
+ * GET /leads/user/:userId
+ */
+router.get("/user/:userId", async (req, res) => {
+  try {
+    const leads = await Lead.find({ userId: req.params.userId }).sort({
+      createdAt: -1,
+    });
+    res.json(leads);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching leads", error: err.message });
+  }
+});
+
+/**
+ * UPDATE lead status
+ * PATCH /leads/status/:id
+ */
+router.patch("/status/:id", async (req, res) => {
+  try {
+    const updatedLead = await Lead.findByIdAndUpdate(
+      req.params.id,
+      { status: req.body.status },
+      { new: true }
+    );
+    res.json(updatedLead);
+  } catch (err) {
+    res.status(500).json({ message: "Error updating status", error: err.message });
+  }
+});
+
+/**
+ * DELETE a lead permanently
+ * DELETE /leads/:id
+ */
 router.delete("/:id", async (req, res) => {
   try {
-    await Lead.findByIdAndDelete(req.params.id);
+    const deleted = await Lead.findByIdAndDelete(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ message: "Lead not found" });
+    }
     res.json({ message: "Lead deleted successfully" });
   } catch (err) {
-    console.error("❌ Error deleting lead:", err);
-    res.status(500).json({ message: "Server Error", error: err.message });
+    res.status(500).json({ message: "Error deleting lead", error: err.message });
   }
 });
 

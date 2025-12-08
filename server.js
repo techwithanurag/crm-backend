@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
+import leadRoutes from "./routes/leadRoutes.js";   // ⭐ added
 
 dotenv.config();
 
@@ -14,6 +15,7 @@ app.use(express.json());
 
 // Routes
 app.use("/", authRoutes);
+app.use("/leads", leadRoutes);  // ⭐ activate leads API
 
 // MongoDB Connection
 mongoose
@@ -21,10 +23,10 @@ mongoose
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
-  .then(() => console.log("✅ MongoDB Connected"))
+  .then(() => console.log("✔ MongoDB Connected"))
   .catch((err) => console.log("❌ MongoDB Error:", err));
 
-// Home route (optional)
+// Home route
 app.get("/", (req, res) => {
   res.send("CRM Backend Running");
 });
