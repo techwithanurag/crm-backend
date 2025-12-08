@@ -9,11 +9,21 @@ const router = express.Router();
  */
 router.post("/", async (req, res) => {
   try {
+    const { userId, name, phone, status } = req.body;
+
+    if (!userId || !name || !phone) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
     const lead = new Lead(req.body);
     await lead.save();
+
     res.status(201).json(lead);
   } catch (err) {
-    res.status(500).json({ message: "Error adding lead", error: err.message });
+    res.status(500).json({
+      message: "Error adding lead",
+      error: err.message,
+    });
   }
 });
 
@@ -36,18 +46,27 @@ router.get("/user/:userId", async (req, res) => {
  * UPDATE lead status
  * PATCH /leads/status/:id
  */
-router.patch("/status/:id", async (req, res) => {
+router.patch("/:id", async (req, res) => {
   try {
     const updatedLead = await Lead.findByIdAndUpdate(
       req.params.id,
       { status: req.body.status },
-      { new: true }
+      { new: true, runValidators: true } // runValidators ensures enum validation
     );
+
+    if (!updatedLead) {
+      return res.status(404).json({ message: "Lead not found" });
+    }
+
     res.json(updatedLead);
   } catch (err) {
-    res.status(500).json({ message: "Error updating status", error: err.message });
+    res.status(500).json({
+      message: "Error updating status",
+      error: err.message
+    });
   }
 });
+
 
 /**
  * DELETE a lead permanently
