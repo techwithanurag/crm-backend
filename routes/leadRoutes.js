@@ -1,3 +1,4 @@
+console.log("📌 Lead Routes Loaded");
 import express from "express";
 import Lead from "../models/Lead.js";
 
@@ -46,26 +47,30 @@ router.get("/user/:userId", async (req, res) => {
  * UPDATE lead status
  * PATCH /leads/status/:id
  */
-router.patch("/:id", async (req, res) => {
+router.patch("/update/:id", async (req, res) => {
+  console.log("PATCH HIT", req.params.id, req.body);
+
   try {
     const updatedLead = await Lead.findByIdAndUpdate(
       req.params.id,
       { status: req.body.status },
-      { new: true, runValidators: true } // runValidators ensures enum validation
+      { new: true }
     );
 
     if (!updatedLead) {
       return res.status(404).json({ message: "Lead not found" });
     }
 
-    res.json(updatedLead);
+    res.json({ message: "Status updated", lead: updatedLead });
+
   } catch (err) {
     res.status(500).json({
-      message: "Error updating status",
-      error: err.message
+      message: "Error updating lead",
+      error: err.message,
     });
   }
 });
+
 
 
 /**
