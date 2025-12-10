@@ -7,7 +7,9 @@ import Lead from "../models/Lead.js";
 
 const router = express.Router();
 
-// REGISTER
+/* =========================
+   ✅ REGISTER
+========================= */
 router.post("/register", async (req, res) => {
   try {
     let { name, email, mobile, password } = req.body;
@@ -32,9 +34,14 @@ router.post("/register", async (req, res) => {
       password: hashed,
     });
 
-    res.json({
+    res.status(201).json({
       message: "Account created successfully",
-      user: { _id: newUser._id, name, email },
+      user: {
+        _id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        mobile: newUser.mobile,
+      },
     });
   } catch (error) {
     console.log(error);
@@ -42,7 +49,9 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// LOGIN
+/* =========================
+   ✅ LOGIN
+========================= */
 router.post("/login", async (req, res) => {
   try {
     let { email, password } = req.body;
@@ -77,26 +86,39 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// ADD LEAD
-router.post("/lead", async (req, res) => {
+/* =========================
+   ✅ ADD LEAD
+========================= */
+router.post("/leads", async (req, res) => {
   try {
-    const { userId, name, phone } = req.body;
+    const { userId, name, phone, status, email, source, notes, budget } = req.body;
 
     if (!userId || !name || !phone) {
-      return res.status(400).json({ message: "Missing fields" });
+      return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const lead = await Lead.create({ userId, name, phone });
+    const lead = await Lead.create({
+      userId,
+      name,
+      phone,
+      email,
+      source,
+      notes,
+      budget,
+      status: status || "New",
+    });
 
-    res.json({ message: "Lead added", lead });
+    res.status(201).json({ message: "Lead added", lead });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Failed to save lead" });
   }
 });
 
-// GET USER LEADS
-router.get("/leads/:userId", async (req, res) => {
+/* =========================
+   ✅ GET USER LEADS
+========================= */
+router.get("/leads/user/:userId", async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.userId)) {
       return res.json([]);
@@ -113,8 +135,10 @@ router.get("/leads/:userId", async (req, res) => {
   }
 });
 
-// UPDATE LEAD STATUS
-router.patch("/lead/:id", async (req, res) => {
+/* =========================
+   ✅ UPDATE LEAD STATUS
+========================= */
+router.patch("/leads/update/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -123,12 +147,15 @@ router.patch("/lead/:id", async (req, res) => {
       return res.status(400).json({ message: "Invalid ID" });
     }
 
-    const allowed = ["New", "Contacted", "Qualified"];
-    if (!allowed.includes(status)) {
-      return res.status(400).json({ message: "Invalid status" });
-    }
+    const updated = await Lead.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true, runValidators: true }
+    );
 
-    const updated = await Lead.findByIdAndUpdate(id, { status }, { new: true });
+    if (!updated) {
+      return res.status(404).json({ message: "Lead not found" });
+    }
 
     res.json({ message: "Status updated", lead: updated });
   } catch (error) {
@@ -137,15 +164,16 @@ router.patch("/lead/:id", async (req, res) => {
   }
 });
 
-// DELETE LEAD
-router.delete("/lead/:id", async (req, res) => {
+/* =========================
+   ✅ DELETE LEAD
+========================= */
+router.delete("/leads/delete/:id", async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: "Invalid ID" });
     }
 
     await Lead.findByIdAndDelete(req.params.id);
-
     res.json({ message: "Lead deleted" });
   } catch (error) {
     console.log(error);
@@ -153,7 +181,9 @@ router.delete("/lead/:id", async (req, res) => {
   }
 });
 
-// ADMIN FETCH ALL LEADS
+/* =========================
+   ✅ ADMIN – FETCH ALL LEADS
+========================= */
 router.get("/admin/leads", async (req, res) => {
   try {
     const leads = await Lead.find()
